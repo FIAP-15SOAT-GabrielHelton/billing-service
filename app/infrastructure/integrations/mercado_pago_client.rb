@@ -10,7 +10,8 @@ module Integrations
     Error = Class.new(StandardError)
     BASE_URL = "https://api.mercadopago.com"
 
-    def initialize(access_token: ENV["MERCADO_PAGO_ACCESS_TOKEN"], notification_url: ENV["MERCADO_PAGO_NOTIFICATION_URL"])
+    def initialize(access_token: ENV.fetch("MERCADO_PAGO_ACCESS_TOKEN", nil),
+                   notification_url: ENV.fetch("MERCADO_PAGO_NOTIFICATION_URL", nil))
       @access_token = access_token
       @notification_url = notification_url
     end
