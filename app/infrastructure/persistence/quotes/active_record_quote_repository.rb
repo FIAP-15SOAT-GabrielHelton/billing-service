@@ -63,7 +63,9 @@ module Persistence
           customer_id: record.customer_id,
           line_items: record.quote_line_item_records.map { |line| line_item_to_entity(line) },
           status: record.status.to_sym,
-          created_at: record.created_at
+          created_at: record.created_at,
+          payment_url: record.payment_url,
+          payment_id: record.payment_id
         )
       end
 
@@ -80,7 +82,9 @@ module Persistence
         {
           work_order_id: quote.work_order_id,
           customer_id: quote.customer_id,
-          status: quote.status.to_s
+          status: quote.status.to_s,
+          payment_url: quote.payment_url,
+          payment_id: quote.payment_id
         }
       end
 

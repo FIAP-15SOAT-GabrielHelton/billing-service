@@ -17,6 +17,7 @@ Rails.application.routes.draw do
       namespace :webhooks do
         patch "quotes/:id/approve", to: "quotes#approve", as: :quote_approval
         patch "quotes/:id/reject", to: "quotes#reject", as: :quote_rejection
+        post "mercado_pago", to: "mercado_pago#create"
       end
     end
   end
