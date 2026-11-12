@@ -9,6 +9,7 @@ Extraído do monolito [`api`](https://github.com/FIAP-15SOAT-GabrielHelton/api) 
 - Envia, aprova e rejeita orçamentos (`/api/v1/quotes` e `/api/v1/webhooks/quotes`).
 - Expõe `GET /api/v1/work_orders/:id/quote`, que o OS Service chama para compor o detalhe da OS.
 - Publica `quote.approved` e `quote.rejected` para os outros serviços.
+- Cancela o orçamento ao receber `work_order.cancelled` (compensação da Saga).
 - Pagamento via Mercado Pago: **ainda não implementado**.
 
 Banco próprio (PostgreSQL). A comunicação com os outros serviços é só por eventos no RabbitMQ

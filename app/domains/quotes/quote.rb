@@ -42,6 +42,10 @@ module Quotes
       @status = @status.transition_to(:rejected)
     end
 
+    def cancel
+      @status = @status.transition_to(:cancelled)
+    end
+
     private
 
     def ensure_status(value)

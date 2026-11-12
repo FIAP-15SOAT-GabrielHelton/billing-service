@@ -41,8 +41,13 @@ describe Quotes::ValueObjects::QuoteStatus do
       expect(described_class.new(:created).can_transition_to?(:rejected)).to be false
     end
 
-    it "treats approved as terminal" do
-      expect(described_class.new(:approved).terminal?).to be true
+    it "lets an approved quote only be cancelled (saga compensation)" do
+      expect(described_class.new(:approved).terminal?).to be false
+      expect(described_class.new(:approved).can_transition_to?(:cancelled)).to be true
+    end
+
+    it "treats cancelled as terminal" do
+      expect(described_class.new(:cancelled).terminal?).to be true
     end
 
     it "treats rejected as terminal" do

@@ -15,6 +15,14 @@ RSpec.describe Messaging::EventHandlers do
     expect(Persistence::Quotes::QuoteRecord.find_by(work_order_id: 10)).to have_attributes(customer_id: 20)
   end
 
+  it "cancels the quote when the work order is cancelled" do
+    handler.call(data)
+
+    described_class.build.fetch("work_order.cancelled").call({ "work_order_id" => 10 })
+
+    expect(Persistence::Quotes::QuoteRecord.find_by(work_order_id: 10).status).to eq("cancelled")
+  end
+
   it "raises when the quote cannot be created so the message is not acked" do
     expect { handler.call(data.merge("line_items" => [ {} ])) }.to raise_error(RuntimeError)
   end

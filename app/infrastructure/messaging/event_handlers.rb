@@ -14,6 +14,12 @@ module Messaging
             line_items: data.fetch("line_items")
           )
           raise result.error if result.failure?
+        end,
+        "work_order.cancelled" => lambda do |data|
+          result = Quotes::CancelQuote.new(quote_repository: quote_repository).call(
+            work_order_id: data.fetch("work_order_id")
+          )
+          raise result.error if result.failure?
         end
       }
     end
