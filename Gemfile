@@ -21,7 +21,7 @@ gem "tzinfo-data", platforms: %i[ windows jruby ]
 # Use the database-backed adapters for Rails.cache, Active Job, and Action Cable
 gem "solid_cache"
 gem "solid_queue", "~> 1.4.0" # shortcut: 1.5+ exige tabelas novas em db/queue_schema.rb; subir junto com a migração do schema
-gem "solid_cable", "~> 3.0" # shortcut: 4.x muda db/cable_schema.rb; subir junto com a migração do schema
+gem "solid_cable", "~> 4.1" # shortcut: 4.x muda db/cable_schema.rb; subir junto com a migração do schema
 
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
