@@ -5,7 +5,8 @@ module Messaging
   module EventHandlers
     QUEUE = "billing-service"
 
-    def self.build(quote_repository: Persistence::Quotes::ActiveRecordQuoteRepository.new)
+    def self.build(quote_repository: Persistence::Quotes::ActiveRecordQuoteRepository.new,
+                   payment_gateway: Integrations::MercadoPagoClient.new)
       {
         "work_order.diagnosed" => lambda do |data|
           result = Quotes::CreateQuote.new(quote_repository: quote_repository).call(
@@ -17,6 +18,12 @@ module Messaging
         end,
         "work_order.cancelled" => lambda do |data|
           result = Quotes::CancelQuote.new(quote_repository: quote_repository).call(
+            work_order_id: data.fetch("work_order_id")
+          )
+          raise result.error if result.failure?
+        end,
+        "execution.completed" => lambda do |data|
+          result = Quotes::RequestPayment.new(quote_repository: quote_repository, payment_gateway: payment_gateway).call(
             work_order_id: data.fetch("work_order_id")
           )
           raise result.error if result.failure?

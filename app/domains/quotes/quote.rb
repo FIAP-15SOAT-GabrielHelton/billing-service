@@ -7,9 +7,10 @@ require_relative "quote_line_item"
 
 module Quotes
   class Quote < Shared::Entity
-    attr_reader :work_order_id, :customer_id, :line_items, :status, :created_at
+    attr_reader :work_order_id, :customer_id, :line_items, :status, :created_at, :payment_url, :payment_id
 
-    def initialize(id:, work_order_id:, customer_id:, line_items: [], status: :created, created_at: nil)
+    def initialize(id:, work_order_id:, customer_id:, line_items: [], status: :created, created_at: nil,
+                   payment_url: nil, payment_id: nil)
       super(id: id)
       raise ArgumentError, "work_order_id is required" if work_order_id.nil?
 
@@ -20,6 +21,8 @@ module Quotes
       @line_items = line_items
       @status = ensure_status(status)
       @created_at = created_at
+      @payment_url = payment_url
+      @payment_id = payment_id
     end
 
     ValueObjects::QuoteStatus::STATES.each do |state|
@@ -44,6 +47,18 @@ module Quotes
 
     def cancel
       @status = @status.transition_to(:cancelled)
+    end
+
+    # Cobrança criada no Mercado Pago: o orçamento aprovado passa a aguardar o pagamento.
+    def request_payment(url)
+      raise "Only an approved quote can be charged" unless approved?
+
+      @payment_url = url
+    end
+
+    def pay(payment_id)
+      @status = @status.transition_to(:paid)
+      @payment_id = payment_id.to_s
     end
 
     private

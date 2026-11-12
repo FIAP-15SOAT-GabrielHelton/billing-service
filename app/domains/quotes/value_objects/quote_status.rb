@@ -3,15 +3,16 @@
 module Quotes
   module ValueObjects
     class QuoteStatus
-      STATES = %i[created sent approved rejected cancelled].freeze
+      STATES = %i[created sent approved rejected cancelled paid].freeze
 
       TRANSITIONS = {
         # cancelled: compensação da Saga, quando a OS é cancelada
         created: %i[sent cancelled],
         sent: %i[approved rejected cancelled],
-        approved: %i[cancelled],
+        approved: %i[cancelled paid],
         rejected: [],
-        cancelled: []
+        cancelled: [],
+        paid: []
       }.freeze
 
       attr_reader :value
