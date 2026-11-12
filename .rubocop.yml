@@ -1,0 +1,72 @@
+# Omakase Ruby styling for Rails
+inherit_gem: { rubocop-rails-omakase: rubocop.yml }
+
+plugins:
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 3.4
+  NewCops: disable
+  Exclude:
+    - "bin/**/*"
+    - "db/schema.rb"
+    - "db/*_schema.rb"
+    - "node_modules/**/*"
+    - "vendor/**/*"
+    - "tmp/**/*"
+    - "log/**/*"
+    - "storage/**/*"
+    - ".githooks/**/*"
+
+Layout/LineLength:
+  Max: 120
+
+Style/Documentation:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Metrics/MethodLength:
+  Exclude:
+    - "db/migrate/**/*"
+    - "spec/**/*"
+
+Metrics/ClassLength:
+  Exclude:
+    - "db/migrate/**/*"
+    - "spec/**/*"
+
+Metrics/AbcSize:
+  Exclude:
+    - "db/migrate/**/*"
+    - "spec/**/*"
+
+Metrics/BlockLength:
+  Exclude:
+    - "db/migrate/**/*"
+    - "spec/**/*"
+    - "config/**/*"
+
+# rswag uses run_test! which generates examples dynamically — the cop cannot see them
+RSpec/EmptyExampleGroup:
+  Exclude:
+    - "spec/requests/**/*"
+
+RSpec/ExampleLength:
+  Max: 15
+
+RSpec/MultipleExpectations:
+  Max: 6
+
+RSpec/NestedGroups:
+  Max: 4
+
+RSpec/VerifiedDoubles:
+  Enabled: false
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Max: 8

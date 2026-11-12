@@ -1,0 +1,95 @@
+name: 'Infra Destroy'
+description: 'Remove os workloads da aplicação no EKS e destrói o ECR via Terraform'
+
+inputs:
+  aws_access_key_id:
+    description: 'AWS Access Key ID'
+    required: true
+  aws_secret_access_key:
+    description: 'AWS Secret Access Key'
+    required: true
+  aws_session_token:
+    description: 'AWS Session Token'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Mascara os inputs sensíveis nos logs de todos os steps subsequentes deste job.
+    - name: Mask Sensitive Credentials
+      shell: bash
+      run: |
+        echo "::add-mask::${{ inputs.aws_access_key_id }}"
+        echo "::add-mask::${{ inputs.aws_secret_access_key }}"
+        echo "::add-mask::${{ inputs.aws_session_token }}"
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        aws-access-key-id: ${{ inputs.aws_access_key_id }}
+        aws-secret-access-key: ${{ inputs.aws_secret_access_key }}
+        aws-session-token: ${{ inputs.aws_session_token }}
+        aws-region: us-east-1
+
+    # Mesmo bootstrap do cd_deploy.yml: deriva o nome do bucket pelo Account ID
+    # (garante unicidade global) e reutiliza se já existir.
+    - name: Bootstrap S3 Backend
+      shell: bash
+      run: |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        TF_BUCKET="oficina-mecanica-tfstate-${ACCOUNT_ID}"
+        echo "TF_BUCKET=$TF_BUCKET" >> "$GITHUB_ENV"
+
+    # terraform_wrapper: false evita texto extra no stdout capturado pelo terraform output.
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v4
+      with:
+        terraform_version: 1.5.7
+        terraform_wrapper: false
+
+    # Remove os workloads da app primeiro para liberar o Load Balancer antes do
+    # destroy do k8s-infra. O EKS_CLUSTER_NAME vem do SSM (publicado pelo
+    # repo k8s-infra), não mais do state deste repo.
+    - name: Cleanup K8s Workloads
+      shell: bash
+      run: |
+        CLUSTER_NAME=$(aws ssm get-parameter --name /oficina-mecanica/eks_cluster_name --query 'Parameter.Value' --output text 2>/dev/null || echo "")
+
+        if [ -n "$CLUSTER_NAME" ] && aws eks update-kubeconfig --name "$CLUSTER_NAME" --region us-east-1 2>/dev/null; then
+          echo "Conectado ao EKS. Limpando recursos..."
+          kubectl delete hpa/oficina-mecanica-hpa svc/oficina-mecanica-web-service deployment/oficina-mecanica-web deployment/oficina-mecanica-jobs job/oficina-mecanica-db-prepare secret/oficina-mecanica-secrets configmap/oficina-mecanica-config --ignore-not-found=true
+
+          # Aguarda a AWS liberar fisicamente o Load Balancer antes do destroy do k8s-infra
+          echo "Aguardando 120s para a AWS liberar fisicamente o Load Balancer e IPs..."
+          sleep 120
+        else
+          echo "Cluster não encontrado, já deletado, ou k8s-infra ainda não implantado. Prosseguindo..."
+        fi
+
+        aws ssm delete-parameter --name /oficina-mecanica/rails_api_base_url 2>/dev/null || true
+
+    # O aws_ecr_repository falha no terraform destroy se ainda houver imagens —
+    # force_destroy não existe no provider hashicorp/aws, então esvaziamos via CLI.
+    - name: Destroy ECR
+      shell: bash
+      run: |
+        cd infra/
+        terraform init \
+          -backend-config="bucket=$TF_BUCKET" \
+          -backend-config="key=oficina-mecanica/terraform.tfstate" \
+          -backend-config="region=us-east-1"
+
+        echo "Esvaziando repositório ECR antes do destroy..."
+        IMAGE_IDS=$(aws ecr list-images \
+          --repository-name oficina-mecanica \
+          --region us-east-1 \
+          --query 'imageIds[*]' \
+          --output json 2>/dev/null || echo "[]")
+        if [ "$IMAGE_IDS" != "[]" ] && [ "$IMAGE_IDS" != "null" ] && [ -n "$IMAGE_IDS" ]; then
+          aws ecr batch-delete-image \
+            --repository-name oficina-mecanica \
+            --region us-east-1 \
+            --image-ids "$IMAGE_IDS"
+        fi
+
+        terraform destroy -auto-approve

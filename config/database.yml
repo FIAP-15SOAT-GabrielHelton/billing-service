@@ -1,0 +1,40 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
+  port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
+  username: <%= ENV.fetch("DATABASE_USERNAME", "postgres") %>
+  password: <%= ENV.fetch("DATABASE_PASSWORD", "") %>
+
+development:
+  primary:
+    <<: *default
+    database: billing_service_development
+  queue:
+    <<: *default
+    database: billing_service_development_queue
+    migrations_paths: db/queue_migrate
+
+test:
+  <<: *default
+  database: billing_service_test
+
+production:
+  primary: &primary_production
+    <<: *default
+    database: billing_service_production
+    username: <%= ENV.fetch("DATABASE_USERNAME", "oficina_mecanica") %>
+    password: <%= ENV["OFICINA_MECANICA_DATABASE_PASSWORD"] %>
+  cache:
+    <<: *primary_production
+    database: billing_service_production_cache
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *primary_production
+    database: billing_service_production_queue
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *primary_production
+    database: billing_service_production_cable
+    migrations_paths: db/cable_migrate
