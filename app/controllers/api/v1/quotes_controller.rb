@@ -15,6 +15,16 @@ module Api
         render json: Quotes::Presenters::Quote.call(quote)
       end
 
+      def by_work_order
+        quote_res = find_quote.call(work_order_id: params[:work_order_id])
+        return render(json: { error: quote_res.error }, status: :not_found) if quote_res.failure?
+
+        quote = quote_res.value
+        return render_forbidden if forbidden_for_customer?(quote.customer_id)
+
+        render json: Quotes::Presenters::Quote.call(quote)
+      end
+
       def send_to_customer
         result = send_quote.call(id: params[:id])
 

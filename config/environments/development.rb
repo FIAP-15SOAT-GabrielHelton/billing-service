@@ -1,6 +1,9 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
+  # Permite que os outros serviços, em seus próprios composes, chamem este pelo host da máquina.
+  config.hosts << "host.docker.internal"
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Make code changes take effect immediately without server restart.

@@ -11,8 +11,8 @@ module Quotes
 
     private
 
-    def perform(id:)
-      quote = @repository.find(id)
+    def perform(id: nil, work_order_id: nil)
+      quote = work_order_id ? @repository.find_by_work_order_id(work_order_id) : @repository.find(id)
       return Shared::Result.failure("Quote not found") unless quote
 
       Shared::Result.success(quote)

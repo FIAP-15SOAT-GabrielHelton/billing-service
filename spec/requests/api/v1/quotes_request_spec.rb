@@ -62,6 +62,30 @@ RSpec.describe "Api::V1::Quotes", type: :request do
     end
   end
 
+  describe "GET /api/v1/work_orders/:work_order_id/quote" do
+    it "returns the quote of the work order" do
+      quote = create_quote
+
+      get "/api/v1/work_orders/10/quote", headers: auth_headers, as: :json
+
+      expect(response.parsed_body).to include("id" => quote.id, "work_order_id" => 10)
+    end
+
+    it "returns 404 when the work order has no quote" do
+      get "/api/v1/work_orders/999999/quote", headers: auth_headers, as: :json
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "forbids another customer" do
+      create_quote
+
+      get "/api/v1/work_orders/10/quote", headers: customer_auth_headers(customer_id: 99), as: :json
+
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
   describe "PATCH /api/v1/quotes/:id/send_to_customer" do
     it "sends the quote" do
       quote = create_quote

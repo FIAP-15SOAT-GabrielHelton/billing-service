@@ -11,6 +11,9 @@ Rails.application.routes.draw do
         end
       end
 
+      # Usado pelo OS Service para compor o detalhe da OS (API Composition).
+      get "work_orders/:work_order_id/quote", to: "quotes#by_work_order", as: :work_order_quote
+
       namespace :webhooks do
         patch "quotes/:id/approve", to: "quotes#approve", as: :quote_approval
         patch "quotes/:id/reject", to: "quotes#reject", as: :quote_rejection

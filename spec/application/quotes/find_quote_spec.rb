@@ -11,6 +11,7 @@ describe Quotes::FindQuote do
     double("QuoteRepository").tap do |repo|
       allow(repo).to receive(:find).with(1).and_return(quote)
       allow(repo).to receive(:find).with(999).and_return(nil)
+      allow(repo).to receive(:find_by_work_order_id).with(10).and_return(quote)
     end
   end
 
@@ -22,6 +23,10 @@ describe Quotes::FindQuote do
 
       expect(result).to be_success
       expect(result.value).to eq(quote)
+    end
+
+    it "finds by work order" do
+      expect(use_case.call(work_order_id: 10).value).to eq(quote)
     end
 
     it "returns failure when not found" do
