@@ -1,10 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: oficina-mecanica-config
+  name: billing-service-config
   namespace: default
 data:
   RAILS_ENV: "production"
   DATABASE_HOST: "DATABASE_HOST_PLACEHOLDER"
   DATABASE_PORT: "5432"
-  DATABASE_USERNAME: "postgres"
+  # Usuário próprio do serviço no RDS, criado pelo db-infra-fase4 (não enxerga os bancos do OS Service).
+  DATABASE_USERNAME: "billing_service"
+  # MERCADO_PAGO_NOTIFICATION_URL é acrescentada pelo cd_deploy.yml, quando o Load Balancer recebe o hostname.

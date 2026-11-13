@@ -61,7 +61,7 @@ runs:
 
         if [ -n "$CLUSTER_NAME" ] && aws eks update-kubeconfig --name "$CLUSTER_NAME" --region us-east-1 2>/dev/null; then
           echo "Conectado ao EKS. Limpando recursos..."
-          kubectl delete hpa/oficina-mecanica-hpa svc/oficina-mecanica-web-service deployment/oficina-mecanica-web deployment/oficina-mecanica-jobs job/oficina-mecanica-db-prepare secret/oficina-mecanica-secrets configmap/oficina-mecanica-config --ignore-not-found=true
+          kubectl delete hpa/billing-service-hpa svc/billing-service-web deployment/billing-service-web deployment/billing-service-jobs deployment/billing-service-consumer job/billing-service-db-prepare secret/billing-service-secrets configmap/billing-service-config --ignore-not-found=true
 
           # Aguarda a AWS liberar fisicamente o Load Balancer antes do destroy do k8s-infra
           echo "Aguardando 120s para a AWS liberar fisicamente o Load Balancer e IPs..."
@@ -70,7 +70,7 @@ runs:
           echo "Cluster não encontrado, já deletado, ou k8s-infra ainda não implantado. Prosseguindo..."
         fi
 
-        aws ssm delete-parameter --name /oficina-mecanica/rails_api_base_url 2>/dev/null || true
+        aws ssm delete-parameter --name /oficina-mecanica/billing_api_base_url 2>/dev/null || true
 
     # O aws_ecr_repository falha no terraform destroy se ainda houver imagens —
     # force_destroy não existe no provider hashicorp/aws, então esvaziamos via CLI.
@@ -80,18 +80,18 @@ runs:
         cd infra/
         terraform init \
           -backend-config="bucket=$TF_BUCKET" \
-          -backend-config="key=oficina-mecanica/terraform.tfstate" \
+          -backend-config="key=oficina-mecanica/billing-service.tfstate" \
           -backend-config="region=us-east-1"
 
         echo "Esvaziando repositório ECR antes do destroy..."
         IMAGE_IDS=$(aws ecr list-images \
-          --repository-name oficina-mecanica \
+          --repository-name billing-service \
           --region us-east-1 \
           --query 'imageIds[*]' \
           --output json 2>/dev/null || echo "[]")
         if [ "$IMAGE_IDS" != "[]" ] && [ "$IMAGE_IDS" != "null" ] && [ -n "$IMAGE_IDS" ]; then
           aws ecr batch-delete-image \
-            --repository-name oficina-mecanica \
+            --repository-name billing-service \
             --region us-east-1 \
             --image-ids "$IMAGE_IDS"
         fi
