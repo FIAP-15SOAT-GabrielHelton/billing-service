@@ -93,4 +93,26 @@ RSpec.describe 'Api::V1::Quotes', openapi_spec: 'v1/swagger.json', type: :reques
       end
     end
   end
+
+  path '/api/v1/work_orders/{work_order_id}/quote' do
+    get 'Get the quote of a work order (used by the OS Service to compose the work order detail)' do
+      tags 'Quotes'
+      produces 'application/json'
+      security [ { bearerAuth: [] } ]
+      parameter name: :work_order_id, in: :path, type: :integer, required: true
+
+      response '200', 'successful' do
+        schema '$ref' => '#/components/schemas/Quote'
+        run_test!
+      end
+
+      response '401', 'unauthorized' do
+        run_test!
+      end
+
+      response '404', 'no quote for this work order' do
+        run_test!
+      end
+    end
+  end
 end

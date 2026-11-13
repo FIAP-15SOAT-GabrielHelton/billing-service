@@ -23,102 +23,38 @@ RSpec.configure do |config|
     'v1/swagger.json' => {
       openapi: '3.0.1',
       info: {
-        title: 'API V1',
+        title: 'Billing Service API',
         version: 'v1'
       },
       paths: {},
       components: {
         schemas: {
-          Customer: {
-            type: :object,
-            properties: {
-              id: { type: :integer },
-              name: { type: :string },
-              document: { type: :string },
-              email: { type: :string },
-              phone: { type: :string },
-              created_at: { type: :string, format: :date_time },
-              updated_at: { type: :string, format: :date_time }
-            },
-            required: %w[id name document email phone]
-          },
-          Vehicle: {
-            type: :object,
-            properties: {
-              id: { type: :integer },
-              customer_id: { type: :integer },
-              license_plate: { type: :string },
-              make: { type: :string },
-              model: { type: :string },
-              year: { type: :integer },
-              color: { type: :string },
-              status: { type: :string, enum: %w[active inactive] },
-              created_at: { type: :string, format: :date_time },
-              updated_at: { type: :string, format: :date_time }
-            },
-            required: %w[id customer_id license_plate make model year]
-          },
-          Service: {
-            type: :object,
-            properties: {
-              id: { type: :integer },
-              name: { type: :string },
-              description: { type: :string },
-              base_price: { type: :string },
-              estimated_duration_minutes: { type: :integer },
-              active: { type: :boolean },
-              created_at: { type: :string, format: :date_time },
-              updated_at: { type: :string, format: :date_time }
-            },
-            required: %w[id name base_price active]
-          },
-          InventoryItem: {
-            type: :object,
-            properties: {
-              id: { type: :integer },
-              name: { type: :string },
-              code: { type: :string },
-              quantity: { type: :integer },
-              minimum_quantity: { type: :integer },
-              unit_price: { type: :string },
-              below_minimum: { type: :boolean },
-              active: { type: :boolean },
-              created_at: { type: :string, format: :date_time },
-              updated_at: { type: :string, format: :date_time }
-            },
-            required: %w[id name code quantity unit_price active]
-          },
-          WorkOrder: {
-            type: :object,
-            properties: {
-              id: { type: :integer },
-              protocol: { type: :string },
-              customer_id: { type: :integer },
-              vehicle_id: { type: :integer },
-              mechanic_id: { type: :integer, nullable: true },
-              status: { type: :string, enum: %w[received diagnosing awaiting_approval approved in_progress completed delivered rejected] },
-              description: { type: :string },
-              created_at: { type: :string, format: :date_time },
-              updated_at: { type: :string, format: :date_time },
-              executed_at: { type: :string, format: :date_time, nullable: true },
-              completed_at: { type: :string, format: :date_time, nullable: true },
-              delivered_at: { type: :string, format: :date_time, nullable: true },
-              total_execution_time_minutes: { type: :number, nullable: true },
-              average_service_duration_minutes: { type: :number, nullable: true }
-            },
-            required: %w[id protocol customer_id vehicle_id status description]
-          },
           Quote: {
             type: :object,
             properties: {
               id: { type: :integer },
               work_order_id: { type: :integer },
-              total_price: { type: :string },
-              status: { type: :string, enum: %w[created sent approved rejected] },
-              created_at: { type: :string, format: :date_time },
-              updated_at: { type: :string, format: :date_time }
+              customer_id: { type: :integer },
+              status: { type: :string, enum: %w[created sent approved rejected cancelled paid] },
+              payment_url: { type: :string, nullable: true,
+                             description: 'Link de pagamento do Mercado Pago, gerado quando a execução termina' },
+              total: { type: :string, example: 'R$ 240.00' },
+              line_items: {
+                type: :array,
+                items: {
+                  type: :object,
+                  properties: {
+                    id: { type: :integer },
+                    description: { type: :string },
+                    quantity: { type: :integer },
+                    unit_price: { type: :string },
+                    subtotal: { type: :string }
+                  }
+                }
+              },
+              created_at: { type: :string, format: :date_time }
             },
-            required: %w[id work_order_id total_price status]
+            required: %w[id work_order_id status total line_items]
           },
           Error: {
             type: :object,
@@ -126,16 +62,6 @@ RSpec.configure do |config|
               error: { type: :string }
             },
             required: %w[error]
-          },
-          ValidationErrors: {
-            type: :object,
-            properties: {
-              errors: {
-                type: :object,
-                additionalProperties: { type: :array, items: { type: :string } }
-              }
-            },
-            required: %w[errors]
           }
         },
         securitySchemes: {

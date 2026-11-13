@@ -56,4 +56,33 @@ RSpec.describe 'Api::V1::Webhooks::Quotes', openapi_spec: 'v1/swagger.json', typ
       end
     end
   end
+
+  path '/api/v1/webhooks/mercado_pago' do
+    post 'Mercado Pago payment notification' do
+      tags 'Payment Webhooks'
+      consumes 'application/json'
+      produces 'application/json'
+      security []
+      description 'Called by Mercado Pago when a payment changes. The body is never trusted: the ' \
+                  'service fetches the payment from the Mercado Pago API by its id and, if it is ' \
+                  'approved and covers the quote total, marks the quote as paid and publishes ' \
+                  'payment.approved. Repeated notifications are idempotent.'
+      parameter name: :notification, in: :body, schema: {
+        type: :object,
+        properties: {
+          type: { type: :string, example: 'payment' },
+          data: { type: :object, properties: { id: { type: :string, example: '189270743868' } } }
+        }
+      }
+
+      response '200', 'notification processed (or ignored, when it is not a payment)' do
+        run_test!
+      end
+
+      response '422', 'payment not found, or amount below the quote total' do
+        schema '$ref' => '#/components/schemas/Error'
+        run_test!
+      end
+    end
+  end
 end
