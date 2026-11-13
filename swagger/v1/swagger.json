@@ -1,0 +1,496 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Billing Service API",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/webhooks/quotes/{id}/approve": {
+      "patch": {
+        "summary": "Approve quote via external webhook (status → approved, decrements stock)",
+        "tags": [
+          "Quotes Webhooks"
+        ],
+        "security": [
+          {
+            "webhookToken": []
+          }
+        ],
+        "description": "Machine-to-machine webhook for an external system to report the customer's approval. Authenticated by a static shared secret in the X-Webhook-Token header (no user JWT).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "quote approved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "missing or invalid webhook token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "unprocessable entity (unknown quote, wrong state, or insufficient stock)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/quotes/{id}/reject": {
+      "patch": {
+        "summary": "Reject quote via external webhook (status → rejected)",
+        "tags": [
+          "Quotes Webhooks"
+        ],
+        "security": [
+          {
+            "webhookToken": []
+          }
+        ],
+        "description": "Machine-to-machine webhook for an external system to report the customer's rejection. Authenticated by a static shared secret in the X-Webhook-Token header (no user JWT).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "quote rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "missing or invalid webhook token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "unprocessable entity (unknown quote or wrong state)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/mercado_pago": {
+      "post": {
+        "summary": "Mercado Pago payment notification",
+        "tags": [
+          "Payment Webhooks"
+        ],
+        "security": [],
+        "description": "Called by Mercado Pago when a payment changes. The body is never trusted: the service fetches the payment from the Mercado Pago API by its id and, if it is approved and covers the quote total, marks the quote as paid and publishes payment.approved. Repeated notifications are idempotent.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "notification processed (or ignored, when it is not a payment)"
+          },
+          "422": {
+            "description": "payment not found, or amount below the quote total",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "payment"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "example": "189270743868"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quotes/{id}": {
+      "get": {
+        "summary": "Get quote by ID",
+        "tags": [
+          "Quotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized"
+          },
+          "404": {
+            "description": "not found"
+          }
+        }
+      }
+    },
+    "/api/v1/quotes/{id}/send_to_customer": {
+      "patch": {
+        "summary": "Send quote to customer (status → sent)",
+        "tags": [
+          "Quotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "quote sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/quotes/{id}/approve": {
+      "patch": {
+        "summary": "Approve quote (status → approved, decrements stock)",
+        "tags": [
+          "Quotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "quote approved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "unprocessable entity (e.g. insufficient stock)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/quotes/{id}/reject": {
+      "patch": {
+        "summary": "Reject quote (status → rejected)",
+        "tags": [
+          "Quotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "quote rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "unprocessable entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/work_orders/{work_order_id}/quote": {
+      "get": {
+        "summary": "Get the quote of a work order (used by the OS Service to compose the work order detail)",
+        "tags": [
+          "Quotes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "work_order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized"
+          },
+          "404": {
+            "description": "no quote for this work order"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "work_order_id": {
+            "type": "integer"
+          },
+          "customer_id": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "sent",
+              "approved",
+              "rejected",
+              "cancelled",
+              "paid"
+            ]
+          },
+          "payment_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Link de pagamento do Mercado Pago, gerado quando a execução termina"
+          },
+          "total": {
+            "type": "string",
+            "example": "R$ 240.00"
+          },
+          "line_items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer"
+                },
+                "unit_price": {
+                  "type": "string"
+                },
+                "subtotal": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date_time"
+          }
+        },
+        "required": [
+          "id",
+          "work_order_id",
+          "status",
+          "total",
+          "line_items"
+        ]
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "webhookToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Webhook-Token"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}
