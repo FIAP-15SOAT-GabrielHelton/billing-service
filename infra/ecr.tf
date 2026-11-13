@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "app" {
-  name                 = "oficina-mecanica"
+  name                 = "billing-service"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -7,7 +7,7 @@ resource "aws_ecr_repository" "app" {
   }
 
   tags = {
-    Name = "oficina-mecanica-ecr"
+    Name = "billing-service-ecr"
   }
 }
 

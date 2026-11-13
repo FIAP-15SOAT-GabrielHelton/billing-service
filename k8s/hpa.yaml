@@ -1,13 +1,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: oficina-mecanica-hpa
+  name: billing-service-hpa
   namespace: default
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: oficina-mecanica-web
+    name: billing-service-web
   minReplicas: 1
   maxReplicas: 3
   metrics:
